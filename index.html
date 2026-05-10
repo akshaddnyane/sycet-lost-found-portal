@@ -4,7 +4,43 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Campus Lost & Found Portal</title>
+<script type="module">
 
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
+
+const firebaseConfig = {
+
+  apiKey: "AIzaSyARo9EBHFqY70Jk6UXkKw3IG6FlunMZLyA",
+
+  authDomain: "sycet-lost-found-portal.firebaseapp.com",
+
+  projectId: "sycet-lost-found-portal",
+
+  storageBucket: "sycet-lost-found-portal.firebasestorage.app",
+
+  messagingSenderId: "666948582603",
+
+  appId: "1:666948582603:web:7ce9baa48f8f01290caf4e"
+
+};
+
+const app = initializeApp(firebaseConfig);
+
+const db = getFirestore(app);
+
+window.db = db;
+window.collection = collection;
+window.addDoc = addDoc;
+window.getDocs = getDocs;
+
+</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -386,7 +422,7 @@
 
     let currentStatus = '';
 
-    let items = JSON.parse(localStorage.getItem('items')) || [];
+    let items = [];
 
     function showForm(status){
 
@@ -426,7 +462,19 @@
 
       items.push(item);
 
-      localStorage.setItem('items', JSON.stringify(items));
+      addDoc(collection(db, "items"), item)
+      .then(() => {
+
+     alert("Item Report Submitted Successfully");
+
+     loadItems();
+
+    })
+     .catch((error) => {
+
+     console.log(error);
+
+     });
 
       alert('Item Report Submitted Successfully');
 
@@ -527,9 +575,22 @@
       displayItems(filtered);
 
     }
+async function loadItems(){
 
+  items = [];
 
-    displayItems(items);
+  const querySnapshot = await getDocs(collection(db, "items"));
+
+  querySnapshot.forEach((doc) => {
+
+    items.push(doc.data());
+
+  });
+
+  displayItems(items);
+
+}
+  loadItems();
 
   </script>
 
