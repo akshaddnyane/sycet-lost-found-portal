@@ -78,6 +78,7 @@ body{
 .option-card p{
   margin-top:12px;
   line-height:1.6;
+  color:#ebdce9
 }
 
 .emoji{
@@ -491,7 +492,21 @@ No search results yet.
 </div>
 
 
-<button id="adminOpenBtn" onclick="openAdminLogin()" style="position:fixed;top:20px;right:20px;background:#111827;color:white;border:none;padding:14px 22px;border-radius:14px;cursor:pointer;font-weight:600;z-index:1000;box-shadow:0 5px 15px rgba(0,0,0,0.2);">
+<button id="adminOpenBtn"
+onclick="openAdminLogin()" style="
+position:absolute;
+top:20px;
+right:20px;
+background:#111827;
+color:white;
+border:none;
+padding:14px 22px;
+border-radius:14px;
+cursor:pointer;
+font-weight:600;
+z-index:9999;
+box-shadow:0 5px 15px rgba(0,0,0,0.2);
+">
 Admin Login
 </button>
 
@@ -505,6 +520,18 @@ Admin Login
 
 <button class="delete-btn" onclick="deleteItemManually()">
 Delete Item
+</button>
+
+</div>
+
+<h2 style="margin-top:35px;">✅ Verify Item</h2>
+
+<div class="search-box">
+
+<input type="text" id="verifyId" placeholder="Enter Item ID to verify">
+
+<button class="search-btn" onclick="verifyItem()">
+Verify Item
 </button>
 
 </div>
@@ -654,7 +681,7 @@ window.submitItem = async function(){
     status: currentStatus,
 
     seen:false,
-
+    verified:false,
     lastInteraction: Date.now(),
 
     createdAt: Date.now()
@@ -754,52 +781,50 @@ window.searchItems = function(){
     .toLowerCase()
     .trim();
 
-
   const results = document.getElementById('results');
 
   const emptyState = document.getElementById('emptyState');
 
   results.innerHTML='';
 
+  if(keyword.length < 8){
 
-  if(keyword.length < 5){
-
-    alert('Please enter more detailed description');
+    alert('Please enter detailed description');
 
     return;
 
   }
 
-
-  const keywords = keyword.split(' ');
-
+  // SEARCH WORDS
+  const searchWords = keyword
+    .split(' ')
+    .filter(word => word.length > 3);
 
   const filtered = items.filter(item => {
 
-    const fullText = `
-      ${item.name}
-      ${item.category}
-      ${item.color}
-      ${item.description}
-      ${item.location}
-    `.toLowerCase();
+    // ONLY DESCRIPTION
+    const descriptionText =
+      item.description.toLowerCase();
 
+    let matchedWords = 0;
 
-    let score = 0;
+    searchWords.forEach(word => {
 
-    keywords.forEach(word => {
+      if(descriptionText.includes(word)){
 
-      if(fullText.includes(word)){
-        score++;
+        matchedWords++;
+
       }
 
     });
 
+    // STRICT 70% MATCH
+    const matchPercentage =
+      (matchedWords / searchWords.length) * 100;
 
-    return score >= 2;
+    return matchPercentage >= 70;
 
   });
-
 
   if(filtered.length === 0){
 
@@ -811,14 +836,11 @@ window.searchItems = function(){
 
   }
 
-
   emptyState.style.display='none';
-
 
   filtered.forEach(item => {
 
     let matchFound = false;
-
 
     items.forEach(otherItem => {
 
@@ -834,7 +856,6 @@ window.searchItems = function(){
       }
 
     });
-
 
     results.innerHTML += `
 
@@ -863,6 +884,14 @@ window.searchItems = function(){
           ? 'Seen'
           : 'Not Seen'
         }</p>
+        <p>
+           <b>Verification:</b>
+            ${
+          item.verified
+          ? '✅ Verified'
+         : '❌ Not Verified'
+         }
+         </p>
 
         ${
           matchFound
@@ -908,6 +937,14 @@ window.openModal = async function(id){
     <p><b>Contact:</b> ${item.contact}</p>
 
     <p><b>Description:</b> ${item.description}</p>
+    <p>
+<b>Verification:</b>
+${
+  item.verified
+  ? '✅ Verified by Admin'
+  : '❌ Not Verified'
+}
+</p>
 
     <div class="seen-tag">
       👁 Seen By User
@@ -1021,6 +1058,41 @@ window.deleteItemManually = async function(){
     alert('Item Deleted Successfully');
 
     document.getElementById('deleteId').value='';
+
+    loadItems();
+
+  }
+
+  catch(error){
+
+    console.log(error);
+
+  }
+
+}
+window.verifyItem = async function(){
+
+  const id = document.getElementById('verifyId').value;
+
+  if(!id){
+
+    alert('Enter item ID');
+
+    return;
+
+  }
+
+  try{
+
+    await updateDoc(doc(db,'items',id),{
+
+      verified:true
+
+    });
+
+    alert('Item Verified Successfully');
+
+    document.getElementById('verifyId').value='';
 
     loadItems();
 
