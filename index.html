@@ -450,7 +450,7 @@ Help someone recover their lost belongings.
 
 <div class="input-group">
 <label>Detailed Description</label>
-<textarea id="description" placeholder="Example: Black wildcraft bag with physics notebook and blue water bottle inside"></textarea>
+<textarea id="description" placeholder="Write detailed description with minimum 10 words for better matching - For Example : Black Wildcraft with physics notebook and blue water bottle inside it"></textarea>
 </div>
 
 </div>
@@ -702,7 +702,30 @@ window.submitItem = async function(){
     return;
 
   }
+// Minimum item name length
+if(item.name.trim().length < 3){
 
+  alert('Item name must contain at least 3 letters');
+
+  return;
+
+}
+
+// Minimum description words
+const descriptionWords =
+  item.description
+  .trim()
+  .split(/\s+/);
+
+if(descriptionWords.length < 10){
+
+  alert(
+    'Description must contain at least 10 words'
+  );
+
+  return;
+
+}
 
   try{
 
@@ -795,22 +818,43 @@ window.searchItems = function(){
 
   }
 
-  // SEARCH WORDS
-  const searchWords = keyword
-    .split(' ')
-    .filter(word => word.length > 3);
-
   const filtered = items.filter(item => {
 
-    // ONLY DESCRIPTION
-    const descriptionText =
-      item.description.toLowerCase();
+    // USER SEARCH
+    const searchText =
+      keyword.toLowerCase();
+
+    // ITEM NAME
+    const itemName =
+      item.name.toLowerCase().trim();
+
+    // ITEM NAME MUST MATCH FIRST
+    if(!searchText.includes(itemName)){
+
+      return false;
+
+    }
+
+    // REMOVE ITEM NAME FROM SEARCH
+    const remainingSearch =
+      searchText.replace(itemName,'').trim();
+
+    const searchWords =
+      remainingSearch
+      .split(/\s+/)
+      .filter(word => word.length > 2);
+
+    // ITEM DESCRIPTION
+    const descWords =
+      item.description
+      .toLowerCase()
+      .split(/\s+/);
 
     let matchedWords = 0;
 
     searchWords.forEach(word => {
 
-      if(descriptionText.includes(word)){
+      if(descWords.includes(word)){
 
         matchedWords++;
 
@@ -818,11 +862,18 @@ window.searchItems = function(){
 
     });
 
-    // STRICT 70% MATCH
-    const matchPercentage =
-      (matchedWords / searchWords.length) * 100;
+    // IF NO EXTRA WORDS
+    if(searchWords.length === 0){
 
-    return matchPercentage >= 70;
+      return false;
+
+    }
+
+    // 70% DESCRIPTION MATCH
+    const similarity =
+      matchedWords / searchWords.length;
+
+    return similarity >= 0.7;
 
   });
 
@@ -845,13 +896,54 @@ window.searchItems = function(){
     items.forEach(otherItem => {
 
       if(
+
         item.id !== otherItem.id &&
-        item.category.toLowerCase() === otherItem.category.toLowerCase() &&
-        item.color.toLowerCase() === otherItem.color.toLowerCase() &&
+
+        // ITEM NAME MUST MATCH
+        item.name.toLowerCase().trim() ===
+        otherItem.name.toLowerCase().trim() &&
+
+        item.category.toLowerCase() ===
+        otherItem.category.toLowerCase() &&
+
+        item.color.toLowerCase() ===
+        otherItem.color.toLowerCase() &&
+
         item.status !== otherItem.status
+
       ){
 
-        matchFound = true;
+        // DESCRIPTION MATCH
+        const itemDesc =
+          item.description
+          .toLowerCase()
+          .split(/\s+/);
+
+        const otherDesc =
+          otherItem.description
+          .toLowerCase()
+          .split(/\s+/);
+
+        let matched = 0;
+
+        itemDesc.forEach(word => {
+
+          if(otherDesc.includes(word)){
+
+            matched++;
+
+          }
+
+        });
+
+        const similarity =
+          matched / itemDesc.length;
+
+        if(similarity >= 0.7){
+
+          matchFound = true;
+
+        }
 
       }
 
@@ -884,14 +976,15 @@ window.searchItems = function(){
           ? 'Seen'
           : 'Not Seen'
         }</p>
+
         <p>
-           <b>Verification:</b>
-            ${
-          item.verified
-          ? '✅ Verified'
-         : '❌ Not Verified'
-         }
-         </p>
+          <b>Verification:</b>
+          ${
+            item.verified
+            ? '✅ Verified'
+            : '❌ Not Verified'
+          }
+        </p>
 
         ${
           matchFound
