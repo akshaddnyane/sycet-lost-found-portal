@@ -93,8 +93,11 @@ The system automatically removes inactive reports after a certain time period to
 🧠 Technologies Used
 
 HTML5
+
 CSS3
+
 JavaScript (ES6)
+
 Firebase Firestore Database
 
 💡 Why This Project?
